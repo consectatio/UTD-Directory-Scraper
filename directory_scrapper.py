@@ -122,14 +122,22 @@ def scrape_directory(search_term):
                         print(f"Error processing row for {search_term}: {e}")
                         pass
 
-                personWithInfoButNoPrefix = {k: person.get(k, "") for k in EXPECTED_FIELDS} #used for checking duplicates without prefix
-                person["Prefix"] = search_term
-                personWithInfo = {k: person.get(k, "") for k in EXPECTED_FIELDS} #ensures all expected fields are present
-                if frozenset(personWithInfoButNoPrefix.items()) in SEEN_PEOPLE:
-                    print(f"{search_term}: Duplicate entry for {personWithInfoButNoPrefix['Name']} found. Skipping.")
+                # Create frozenset for duplicate checking, excluding 'Prefix'
+                person_frozen = frozenset({k: person.get(k, "") for k in EXPECTED_FIELDS if k != "Prefix"}.items())
+                
+                # Check if already seen
+                if person_frozen in SEEN_PEOPLE:
+                    print(f"{search_term}: Duplicate entry for {person.get('Name', '')} found. Skipping.")
                     continue
-                SEEN_PEOPLE.add(frozenset(personWithInfoButNoPrefix.items())) #add to seen people
-                people.append(personWithInfo) #add person to list of people
+                
+                # Add to seen set
+                SEEN_PEOPLE.add(person_frozen)
+                
+                # Add Prefix for CSV output only
+                person["Prefix"] = search_term
+                personWithInfo = {k: person.get(k, "") for k in EXPECTED_FIELDS}  # ensures all fields are present
+                people.append(personWithInfo)
+
 
             except StaleElementReferenceException:
                 time.sleep(.1)
@@ -213,6 +221,7 @@ if __name__ == "__main__":
     finally:
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+
 
 
 
