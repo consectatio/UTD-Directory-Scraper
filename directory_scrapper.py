@@ -200,5 +200,6 @@ def main():
         os.remove(LAST_PREFIX_FILE)
 
 if __name__ == "__main__":
-
     main()
+    os.system("sudo shutdown -h now") #shuts down the EC2 AWS Ubuntu device
+
