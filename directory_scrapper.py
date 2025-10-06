@@ -43,6 +43,7 @@ def scrape_directory(search_term):
     url = f"https://www.utdallas.edu/directory/"
     people = [] 
     driver = get_driver()
+    numPeople = 0
 
     try:
         print(f"{search_term}: 🔍 Searching...")
@@ -87,6 +88,7 @@ def scrape_directory(search_term):
 
         for entry in entries:
             person = {} #for individual people
+            numPeople += 1
             try:
                 name_element = entry.find_element(By.CSS_SELECTOR, ".fullname.mt-3") #full name and title are directly under a person's div <h2 class="fullname mt-3">name</h2>
                 WebDriverWait(driver, 5).until(lambda d: name_element.text.strip() != "")
@@ -154,7 +156,7 @@ def scrape_directory(search_term):
 
     driver.quit()
     #check if we hit the max entries for this prefix
-    if len(people) >= 100:
+    if len(numPeople) >= 100:
         search_saturated(search_term)
     else:
         print(f"{search_term}: ✅ Completed with {len(people)} entries.")
@@ -206,6 +208,7 @@ if __name__ == "__main__":
     finally:
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+
 
 
 
