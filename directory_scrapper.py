@@ -148,7 +148,7 @@ def scrape_directory(search_term):
     df.to_csv(OUTPUT_FILE, mode='a', header=write_header, index=False) #append to file
     #unique entries counter
     unique_entries = len(df)
-    print(f"{search_term}: ✅ Found {len(people)} entries, {unique_entries} saved.")
+    print(f"{search_term}: ✅ Found {numPeople} entries, {unique_entries} saved.")
     #update running total
     global total_unique_entries
     total_unique_entries += unique_entries
@@ -208,6 +208,7 @@ if __name__ == "__main__":
     finally:
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+
 
 
 
