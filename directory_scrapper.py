@@ -1,6 +1,7 @@
 ﻿from math import e
 import pickle
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -202,6 +203,7 @@ def main():
 if __name__ == "__main__":
     main()
     os.system("sudo shutdown -h now") #shuts down the EC2 AWS Ubuntu device
+
 
 
 
