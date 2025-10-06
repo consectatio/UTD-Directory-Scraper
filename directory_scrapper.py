@@ -156,7 +156,7 @@ def scrape_directory(search_term):
 
     driver.quit()
     #check if we hit the max entries for this prefix
-    if len(numPeople) >= 100:
+    if len numPeople >= 100:
         search_saturated(search_term)
     else:
         print(f"{search_term}: ✅ Completed with {len(people)} entries.")
@@ -208,6 +208,7 @@ if __name__ == "__main__":
     finally:
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+
 
 
 
