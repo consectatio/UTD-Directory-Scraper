@@ -34,7 +34,7 @@ def get_driver(): #creates the web driver
         # Automatically installs ChromeDriver matching Chrome version
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
         return driver
-    except:
+    except Exception as e:
         print(f"Error initializing Chrome driver with webdriver_manager: {e}")
         sys.exit(1)
 
@@ -202,4 +202,5 @@ def main():
 if __name__ == "__main__":
     main()
     os.system("sudo shutdown -h now") #shuts down the EC2 AWS Ubuntu device
+
 
