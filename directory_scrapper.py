@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 import pandas as pd
 import os
@@ -24,11 +25,14 @@ FROZEN_PEOPLE_SEEN = os.path.abspath("seen_people.pkl")
 
 def get_driver(): #creates the web driver
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--headless=new")  # headless mode (new flag is more stable)
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")    # sometimes needed on Linux
+    chrome_options.add_argument("--window-size=1920,1080")  # optional, avoids rendering issues
     try:
-        driver = webdriver.Chrome(options=chrome_options)
+        # Automatically installs ChromeDriver matching Chrome version
+        driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
         return driver
     except:
         print(f"Error initializing Chrome driver with webdriver_manager: {e}")
@@ -196,4 +200,5 @@ def main():
         os.remove(LAST_PREFIX_FILE)
 
 if __name__ == "__main__":
+
     main()
