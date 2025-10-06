@@ -189,6 +189,11 @@ def main():
     prefixes = [''.join(p) for p in product(ascii_lowercase, repeat=2)]
     #start scraping from the last prefix
     start_index = prefixes.index(last_prefix) if last_prefix in prefixes else 0
+    for i, p in enumerate(prefixes): #for longer last_prefix, resume from first 2 letters
+        if p >= last_prefix[:2]:
+            start_index = i
+            break
+    
     for prefix in prefixes[start_index:]:
         print(f"Starting search for prefix: {prefix}")
         scrape_directory(prefix)
@@ -208,6 +213,7 @@ if __name__ == "__main__":
     finally:
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+
 
 
 
