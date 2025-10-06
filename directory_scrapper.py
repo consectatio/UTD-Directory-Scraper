@@ -31,11 +31,8 @@ def get_driver(): #creates the web driver
     chrome_options.add_argument("--disable-gpu")    # sometimes needed on Linux
     chrome_options.add_argument("--window-size=1920,1080")  # optional, avoids rendering issues
     try:
-        # Automatically installs ChromeDriver matching Chrome version
-        driver = webdriver.Chrome(
-            executable_path=ChromeDriverManager().install(),
-            options=chrome_options
-        )
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         return driver
     except Exception as e:
         print(f"Error initializing Chrome driver with webdriver_manager: {e}")
@@ -205,6 +202,7 @@ def main():
 if __name__ == "__main__":
     main()
     os.system("sudo shutdown -h now") #shuts down the EC2 AWS Ubuntu device
+
 
 
 
