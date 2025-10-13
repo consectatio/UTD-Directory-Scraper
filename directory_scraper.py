@@ -187,7 +187,7 @@ def search_saturated(search_term):
     added_spaced_terms = [" a", " b", " c", " d", " e", " f", " g", " h", " i", " j", " k", " l", " m", " n", " o", " p", " q", " r", " s", " t", " u", " v", " w", " x", " y", " z"]
     for term in added_terms:
         scrape_directory(search_term + term) #recursively search with added terms
-    if len(search_term) > 2 and search_term[-2] == " ": #recursively add spaced terms if there is not already a space in the search terms
+    if len(search_term) > 2 and search_term[-2] != " ": #recursively add spaced terms if there is not already a space in the search terms
         for spaced_term in added_spaced_terms:
             scrape_directory(search_term + spaced_term)
     return
@@ -254,3 +254,4 @@ def startScrap(OperatingSystem, Reversed = 0):
             os.remove(LAST_PREFIX_FILE)
     finally:
         close()
+
