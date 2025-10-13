@@ -254,5 +254,3 @@ def startScrap(OperatingSystem, Reversed = 0):
             os.remove(LAST_PREFIX_FILE)
     finally:
         close()
-
-
