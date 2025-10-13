@@ -1,4 +1,4 @@
-﻿from math import e
+from math import e
 import pickle
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -23,21 +23,32 @@ LAST_PREFIX_FILE = os.path.join(BASE_DIR, "last_prefix.txt")
 EXPECTED_FIELDS = ["Name", "Email:", "Title", "Year", "Department:", "Major", "School", "Prefix", "Location", "Phone", "Mailstop"]
 SEEN_PEOPLE = set() #to track unique entries
 FROZEN_PEOPLE_SEEN = os.path.abspath("seen_people.pkl")
+OPERATING_SYSTEM = ""
 
-def get_driver(): #creates the web driver
+def get_driver(max_retries = 3): #creates the web driver
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")  # headless mode (new flag is more stable)
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")    # sometimes needed on Linux
     chrome_options.add_argument("--window-size=1920,1080")  # optional, avoids rendering issues
-    try:
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        return driver
-    except Exception as e:
-        print(f"Error initializing Chrome driver with webdriver_manager: {e}")
-        sys.exit(1)
+
+    for attempt in range(max_retries):
+        try:
+            if (OPERATING_SYSTEM == "Linux"):
+                service = Service(ChromeDriverManager().install())
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+            elif (OPERATING_SYSTEM == "Windows"):
+                driver = webdriver.Chrome(options=chrome_options)
+            return driver
+        except Exception as e:
+            print(f"Error initializing WebDriver: {e}")
+            if attempt < max_retries:
+                print(f"Retrying ({attempt + 1}/{max_retries})...")
+                time.sleep(2)
+            else:
+                print(f"Failed to initialize WebDriver after {max_retries} attempts. Exiting.")
+                close()
 
 def scrape_directory(search_term):
     url = f"https://www.utdallas.edu/directory/"
@@ -138,7 +149,6 @@ def scrape_directory(search_term):
                 personWithInfo = {k: person.get(k, "") for k in EXPECTED_FIELDS}  # ensures all fields are present
                 people.append(personWithInfo)
 
-
             except StaleElementReferenceException:
                 time.sleep(.1)
                 continue
@@ -173,63 +183,74 @@ def scrape_directory(search_term):
 def search_saturated(search_term):
     print(f"{search_term}: ⚠️ Reached maximum entries for this prefix. Adding deeper search terms.")
     #add more letters to the search term to refine it (you have to add space letters as well in case of common last names the search will read as last_name first_name with the space allowing you to get thru all the smiths and nguyens)
-    added_terms = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-                  " a", " b", " c", " d", " e", " f", " g", " h", " i", " j", " k", " l", " m", " n", " o", " p", " q", " r", " s", " t", " u", " v", " w", " x", " y", " z"]
+    added_terms = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+    added_spaced_terms = [" a", " b", " c", " d", " e", " f", " g", " h", " i", " j", " k", " l", " m", " n", " o", " p", " q", " r", " s", " t", " u", " v", " w", " x", " y", " z"]
     for term in added_terms:
         scrape_directory(search_term + term) #recursively search with added terms
+    if len(search_term) > 2 and search_term[-2] == " ": #recursively add spaced terms if there is not already a space in the search terms
+        for spaced_term in added_spaced_terms:
+            scrape_directory(search_term + spaced_term)
     return
 
-def main():
-    global total_unique_entries
-    total_unique_entries = 0
-    #read last prefix from file if it exists
-    last_prefix = ""
-    if os.path.exists(LAST_PREFIX_FILE):
-        with open(LAST_PREFIX_FILE, "r") as f:
-            last_prefix = f.read().strip()
-            print(f"Resuming from last prefix: {last_prefix}")
-    if os.path.exists(FROZEN_PEOPLE_SEEN):
-        with open(FROZEN_PEOPLE_SEEN, "rb") as f:
-            global SEEN_PEOPLE
-            SEEN_PEOPLE = pickle.load(f)
-            print(f"Loaded {len(SEEN_PEOPLE)} previously seen entries.")
-    #generate prefixes from aa to zz
-    prefixes = [''.join(p) for p in product(ascii_lowercase, repeat=2)]
-    #start scraping from the last prefix
-    start_index = prefixes.index(last_prefix) if last_prefix in prefixes else 0
-    for i, p in enumerate(prefixes): #for longer last_prefix, resume from first 2 letters
-        if p >= last_prefix[:2]:
-            start_index = i
-            break
-    
-    for prefix in prefixes[start_index:]:
-        print(f"Starting search for prefix: {prefix}")
-        scrape_directory(prefix)
-        #save last prefix to file
-        with open(LAST_PREFIX_FILE, "w") as f:
-            f.write(prefix)
-        print(f"Completed search for prefix: {prefix}")
-    
-    print(f"Scraping completed. Total unique entries found: {total_unique_entries}")
-    #remove last prefix file as we're done
-    if os.path.exists(LAST_PREFIX_FILE):
-        os.remove(LAST_PREFIX_FILE)
-
-if __name__ == "__main__":
-    try:
-        main()
-    finally:
+def close():
+    if (OPERATING_SYSTEM == "Linux"):
         print("Shutting down EC2 instance...")
         os.system("sudo shutdown -h now")
+    elif (OPERATING_SYSTEM == "Windows"):
+        print("Exiting script...")
+        exit(1)
+    else:
+        print("Unknown operating system. Please shut down manually if needed.")
 
-
-
-
-
-
-
-
-
-
-
-
+def startScrap(OperatingSystem, Reversed = 0):
+    try:
+        #set globals
+        global OPERATING_SYSTEM
+        OPERATING_SYSTEM = OperatingSystem
+        global total_unique_entries
+        total_unique_entries = 0
+        #adjust globals if reversed
+        if Reversed == 1:
+            global OUTPUT_FILE
+            OUTPUT_FILE = os.path.join(BASE_DIR, "directory_results_reversed.csv")
+            global LAST_PREFIX_FILE
+            LAST_PREFIX_FILE = os.path.join(BASE_DIR, "last_prefix_reversed.txt")
+            global FROZEN_PEOPLE_SEEN
+            FROZEN_PEOPLE_SEEN = os.path.abspath("seen_people_reversed.pkl")
+        #read last prefix from file if it exists
+        last_prefix = ""
+        if os.path.exists(LAST_PREFIX_FILE):
+            with open(LAST_PREFIX_FILE, "r") as f:
+                last_prefix = f.read().strip()
+                print(f"Resuming from last prefix: {last_prefix}")
+        if os.path.exists(FROZEN_PEOPLE_SEEN):
+            with open(FROZEN_PEOPLE_SEEN, "rb") as f:
+                global SEEN_PEOPLE
+                SEEN_PEOPLE = pickle.load(f)
+                print(f"Loaded {len(SEEN_PEOPLE)} previously seen entries.")
+        #generate prefixes from aa to zz
+        prefixes = [''.join(p) for p in product(ascii_lowercase, repeat=2)]
+        #reverse prefixes if needed
+        if Reversed == 1:
+            prefixes = prefixes[::-1]
+        #start scraping from the last prefix
+        start_index = prefixes.index(last_prefix) if last_prefix in prefixes else 0
+        for i, p in enumerate(prefixes): #for longer last_prefix, resume from first 2 letters
+            if p >= last_prefix[:2]:
+                start_index = i
+                break
+    
+        for prefix in prefixes[start_index:]:
+            print(f"Starting search for prefix: {prefix}")
+            scrape_directory(prefix)
+            #save last prefix to file
+            with open(LAST_PREFIX_FILE, "w") as f:
+                f.write(prefix)
+            print(f"Completed search for prefix: {prefix}")
+    
+        print(f"Scraping completed. Total unique entries found: {total_unique_entries}")
+        #remove last prefix file as we're done
+        if os.path.exists(LAST_PREFIX_FILE):
+            os.remove(LAST_PREFIX_FILE)
+    finally:
+        close()
