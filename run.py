@@ -1,4 +1,4 @@
-from directory_scrapper import startScrap
+from directory_scraper import startScrap
 from pkl_rebuild import recreate_seen_people_pickle
 
 def gui():
@@ -35,4 +35,5 @@ def gui():
 
 if __name__ == "__main__":
     gui()
+
     exit(1)
