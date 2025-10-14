@@ -50,11 +50,11 @@ def get_driver(max_retries = 3): #creates the web driver
                 print(f"Failed to initialize WebDriver after {max_retries} attempts. Exiting.")
                 close()
 
-def scrape_directory(search_term, driver):
+def scrape_directory(search_term):
     url = f"https://www.utdallas.edu/directory/"
     people = [] 
     numPeople = 0
-
+    driver = get_driver()
     try:
         print(f"{search_term}: 🔍 Searching...")
         driver.get(url)
@@ -169,23 +169,24 @@ def scrape_directory(search_term, driver):
     total_unique_entries += unique_entries
     print(f"{search_term}: 🌟 Total unique entries so far: {total_unique_entries}")
 
+    driver.quit()
     #check if we hit the max entries for this prefix
     if numPeople >= 100:
-        search_saturated(search_term, driver)
+        search_saturated(search_term)
     else:
         print(f"{search_term}: ✅ Completed with {len(people)} entries.")
     return people
 
-def search_saturated(search_term, driver):
+def search_saturated(search_term):
     print(f"{search_term}: ⚠️ Reached maximum entries for this prefix. Adding deeper search terms.")
     #add more letters to the search term to refine it (you have to add space letters as well in case of common last names the search will read as last_name first_name with the space allowing you to get thru all the smiths and nguyens)
     added_terms = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
     added_spaced_terms = [" a", " b", " c", " d", " e", " f", " g", " h", " i", " j", " k", " l", " m", " n", " o", " p", " q", " r", " s", " t", " u", " v", " w", " x", " y", " z"]
     for term in added_terms:
-        scrape_directory(search_term + term, driver) #recursively search with added terms
+        scrape_directory(search_term + term) #recursively search with added terms
     if len(search_term) > 2 and " " not in search_term: #check if spaced characters are already in the search term, if they are not present, add them
         for spaced_term in added_spaced_terms:
-            scrape_directory(search_term + spaced_term, driver)
+            scrape_directory(search_term + spaced_term)
     return
 
 def close():
@@ -235,10 +236,10 @@ def startScrap(OperatingSystem, Reversed = 0):
             if p >= last_prefix[:2]:
                 start_index = i
                 break
-        driver = get_driver()
+
         for prefix in prefixes[start_index:]:
             print(f"Starting search for prefix: {prefix}")
-            scrape_directory(prefix, driver)
+            scrape_directory(prefix)
             #save last prefix to file
             with open(LAST_PREFIX_FILE, "w") as f:
                 f.write(prefix)
@@ -249,9 +250,6 @@ def startScrap(OperatingSystem, Reversed = 0):
         if os.path.exists(LAST_PREFIX_FILE):
             os.remove(LAST_PREFIX_FILE)
     finally:
-        try:
-            driver.quit()
-        except Exception:
-            pass
         close()
+
 
