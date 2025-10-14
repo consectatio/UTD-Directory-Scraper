@@ -50,18 +50,15 @@ def get_driver(max_retries = 3): #creates the web driver
                 print(f"Failed to initialize WebDriver after {max_retries} attempts. Exiting.")
                 close()
 
-def scrape_directory(search_term):
+def scrape_directory(search_term, driver):
     url = f"https://www.utdallas.edu/directory/"
     people = [] 
-    driver = get_driver()
     numPeople = 0
 
     try:
         print(f"{search_term}: 🔍 Searching...")
         driver.get(url)
         time.sleep(.5) #wait for the main content to load
-        with open(LAST_PREFIX_FILE, "w") as file: #save the last prefix searched
-            file.write(search_term)
     except TimeoutException:
         print(f"{search_term}: Page load timed out.")
         return []
@@ -71,7 +68,6 @@ def scrape_directory(search_term):
 
     #input into search box and submit
     try:
-        driver.get(url)
         time.sleep(.5)
         search_input = driver.find_element(By.NAME, "dirSearch") #find the search input box
         search_input.clear()
@@ -164,6 +160,7 @@ def scrape_directory(search_term):
     df = pd.DataFrame(people)
     write_header = not os.path.exists(OUTPUT_FILE) or os.path.getsize(OUTPUT_FILE) == 0 #write header if file doesn't exist or is empty
     df.to_csv(OUTPUT_FILE, mode='a', header=write_header, index=False) #append to file
+    
     #unique entries counter
     unique_entries = len(df)
     print(f"{search_term}: ✅ Found {numPeople} entries, {unique_entries} saved.")
@@ -172,24 +169,23 @@ def scrape_directory(search_term):
     total_unique_entries += unique_entries
     print(f"{search_term}: 🌟 Total unique entries so far: {total_unique_entries}")
 
-    driver.quit()
     #check if we hit the max entries for this prefix
     if numPeople >= 100:
-        search_saturated(search_term)
+        search_saturated(search_term, driver)
     else:
         print(f"{search_term}: ✅ Completed with {len(people)} entries.")
     return people
 
-def search_saturated(search_term):
+def search_saturated(search_term, driver):
     print(f"{search_term}: ⚠️ Reached maximum entries for this prefix. Adding deeper search terms.")
     #add more letters to the search term to refine it (you have to add space letters as well in case of common last names the search will read as last_name first_name with the space allowing you to get thru all the smiths and nguyens)
     added_terms = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
     added_spaced_terms = [" a", " b", " c", " d", " e", " f", " g", " h", " i", " j", " k", " l", " m", " n", " o", " p", " q", " r", " s", " t", " u", " v", " w", " x", " y", " z"]
     for term in added_terms:
-        scrape_directory(search_term + term) #recursively search with added terms
+        scrape_directory(search_term + term, driver) #recursively search with added terms
     if len(search_term) > 2 and " " not in search_term: #check if spaced characters are already in the search term, if they are not present, add them
         for spaced_term in added_spaced_terms:
-            scrape_directory(search_term + spaced_term)
+            scrape_directory(search_term + spaced_term, driver)
     return
 
 def close():
@@ -239,10 +235,10 @@ def startScrap(OperatingSystem, Reversed = 0):
             if p >= last_prefix[:2]:
                 start_index = i
                 break
-    
+        driver = get_driver()
         for prefix in prefixes[start_index:]:
             print(f"Starting search for prefix: {prefix}")
-            scrape_directory(prefix)
+            scrape_directory(prefix, driver)
             #save last prefix to file
             with open(LAST_PREFIX_FILE, "w") as f:
                 f.write(prefix)
@@ -253,4 +249,9 @@ def startScrap(OperatingSystem, Reversed = 0):
         if os.path.exists(LAST_PREFIX_FILE):
             os.remove(LAST_PREFIX_FILE)
     finally:
+        try:
+            driver.quit()
+        except Exception:
+            pass
         close()
+
