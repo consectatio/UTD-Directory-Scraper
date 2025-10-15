@@ -201,11 +201,9 @@ def close():
 
 def startScrap(OperatingSystem, Reversed = 0):
     try:
-        #set globals
+        #adjust operating system
         global OPERATING_SYSTEM
         OPERATING_SYSTEM = OperatingSystem
-        global total_unique_entries
-        total_unique_entries = 0
         #adjust globals if reversed
         if Reversed == 1:
             global OUTPUT_FILE
@@ -220,11 +218,17 @@ def startScrap(OperatingSystem, Reversed = 0):
             with open(LAST_PREFIX_FILE, "r") as f:
                 last_prefix = f.read().strip()
                 print(f"Resuming from last prefix: {last_prefix}")
+        #read for previously seen people from .pkl file
         if os.path.exists(FROZEN_PEOPLE_SEEN):
             with open(FROZEN_PEOPLE_SEEN, "rb") as f:
                 global SEEN_PEOPLE
                 SEEN_PEOPLE = pickle.load(f)
                 print(f"Loaded {len(SEEN_PEOPLE)} previously seen entries.")
+                global total_unique_entries
+                total_unique_entries = len(SEEN_PEOPLE)
+        else:
+            global total_unique_entries
+            total_unique_entries = 0
         #generate prefixes from aa to zz
         prefixes = [''.join(p) for p in product(ascii_lowercase, repeat=2)]
         #reverse prefixes if needed
@@ -251,5 +255,6 @@ def startScrap(OperatingSystem, Reversed = 0):
             os.remove(LAST_PREFIX_FILE)
     finally:
         close()
+
 
 
