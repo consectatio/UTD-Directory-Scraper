@@ -20,7 +20,7 @@ from string import ascii_lowercase
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_FILE = os.path.join(BASE_DIR, "directory_results.csv")
 LAST_PREFIX_FILE = os.path.join(BASE_DIR, "last_prefix.txt")
-EXPECTED_FIELDS = ["Name", "Email:", "Title", "Year", "Department:", "Major", "School", "Prefix", "Location", "Phone", "Mailstop"]
+EXPECTED_FIELDS = ["Name", "Email:", "Title", "Year", "Department:", "Major", "School", "Prefix"]
 SEEN_PEOPLE = set() #to track unique entries
 FROZEN_PEOPLE_SEEN = os.path.abspath("seen_people.pkl")
 OPERATING_SYSTEM = ""
@@ -255,3 +255,4 @@ def startScrap(OperatingSystem, Reversed = 0):
             os.remove(LAST_PREFIX_FILE)
     finally:
         close()
+
